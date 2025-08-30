@@ -1,8 +1,9 @@
-import os
+import os, asyncio
 import pandas as pd
 from typing import Literal
-import os
 from dotenv import load_dotenv
+# Import Cognee helpers
+from cognee_setup import setup_cognee, query_cognee
 
 # Load keys from .env
 load_dotenv()
@@ -43,8 +44,13 @@ llm = ChatOpenAI(
 )
 
 # Connect to LangSmith and OpenAI
-client = Client()
 oai_client = OpenAI()
+
+async def run():
+    # Initialize Cognee
+    await setup_cognee()
+    results = await query_cognee("What did Frodo do?")
+    print("Cognee Results:", results)
 
 # Pull the prompt to use
 # You can also specify a specific commit by passing the commit hash "my-prompt:<commit-hash>"
@@ -52,10 +58,15 @@ prompt = client.pull_prompt("short-assistant")
 
 # Since our prompt only has one variable we could also pass in the value directly
 # The code below is equivalent to formatted_prompt = prompt.invoke("What is the color of the sky?")
-formatted_prompt = prompt.invoke({"user inputs": "What is the color of the sky?"})
+formatted_prompt = prompt.invoke({"user inputs": "What is the color of the sky?", "workout data": "cognee information goes here"})
 
 # Test the prompt
 response = oai_client.chat.completions.create(
     model="gpt-4o",
     messages=convert_to_openai_messages(formatted_prompt.messages),
 )
+
+print("OpenAI Response:", response)
+
+if __name__ == "__main__":
+    asyncio.run(run())

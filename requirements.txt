@@ -3,3 +3,7 @@ langsmith
 langchain-openai
 pandas
 python-dotenv
+langsmith 
+openai 
+langchain_core
+cognee
