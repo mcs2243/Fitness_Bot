@@ -15,6 +15,8 @@ from langgraph.graph import StateGraph, MessagesState
 from langgraph.prebuilt import ToolNode
 from langchain.prompts import ChatPromptTemplate
 from langsmith import Client
+from openai import OpenAI
+from langchain_core.messages import convert_to_openai_messages
 
 # --- API Keys / Environment ---
 # (in production, store these in a .env file or system environment vars)
@@ -31,9 +33,6 @@ client = Client(
     api_key=os.getenv("LANGSMITH_API_KEY")
 )
 
-# Fetch the prompt object from LangSmith
-prompt_obj = client.get_prompt("short-assistant")  # returns a LangSmith Prompt
-
 # Initialize your LLM
 llm = ChatOpenAI(
     model="gpt-4o-mini",
@@ -43,6 +42,20 @@ llm = ChatOpenAI(
     max_retries=2,
 )
 
-text = prompt_obj.template.format(user_input="Are you working?")
-response = llm.invoke([HumanMessage(content=text)])
-print("LLM Response:", response.content)
+# Connect to LangSmith and OpenAI
+client = Client()
+oai_client = OpenAI()
+
+# Pull the prompt to use
+# You can also specify a specific commit by passing the commit hash "my-prompt:<commit-hash>"
+prompt = client.pull_prompt("short-assistant")
+
+# Since our prompt only has one variable we could also pass in the value directly
+# The code below is equivalent to formatted_prompt = prompt.invoke("What is the color of the sky?")
+formatted_prompt = prompt.invoke({"user inputs": "What is the color of the sky?"})
+
+# Test the prompt
+response = oai_client.chat.completions.create(
+    model="gpt-4o",
+    messages=convert_to_openai_messages(formatted_prompt.messages),
+)
