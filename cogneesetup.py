@@ -1,7 +1,9 @@
 import os
+import argparse
 import asyncio
 import json
 from datetime import datetime
+
 from dotenv import load_dotenv
 import cognee
 import pandas as pd
@@ -31,17 +33,25 @@ print(f"Loaded {total_rows} rows")
 # Initialize checkpoint
 def load_checkpoint():
     if os.path.exists(CHECKPOINT_FILE):
-        with open(CHECKPOINT_FILE, 'r') as f:
+        with open(CHECKPOINT_FILE, "r") as f:
             return json.load(f)
     return {"last_processed": -1, "total_processed": 0}
+
+
+def checkpoint_covers_dataset(checkpoint: dict) -> bool:
+    """Return True if the checkpoint already includes every row in the dataset."""
+
+    last_processed = checkpoint.get("last_processed", -1)
+    return last_processed >= total_rows - 1
+
 
 def save_checkpoint(last_processed):
     checkpoint = {
         "last_processed": last_processed,
         "total_processed": last_processed + 1,
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }
-    with open(CHECKPOINT_FILE, 'w') as f:
+    with open(CHECKPOINT_FILE, "w") as f:
         json.dump(checkpoint, f)
 
 async def process_chunk(chunk):
@@ -56,30 +66,45 @@ async def process_chunk(chunk):
         print(f"Error processing chunk: {e}")
         return False
 
-async def setup_cognee():
-    """Initialize Cognee and process data in chunks."""
-    # Initialize Cognee
+async def setup_cognee(force: bool = False):
+    """Initialize Cognee and process data in chunks.
+
+    If a checkpoint already covers the full dataset, the run is skipped unless
+    ``force`` is True. This keeps existing embeddings intact when you only want
+    to query or inspect them.
+    """
+
     checkpoint = load_checkpoint()
-    start_idx = checkpoint["last_processed"] + 1
-    
-    if start_idx == 0:
+    start_idx = checkpoint.get("last_processed", -1) + 1
+
+    if checkpoint_covers_dataset(checkpoint) and not force:
+        print(
+            "Checkpoint already covers the dataset. Skipping embedding run. "
+            "Use --force to rebuild."
+        )
+        return
+
+    if force:
+        print("Force rebuild requested: pruning existing Cognee data...")
+        await cognee.prune.prune_data()
+        await cognee.prune.prune_system(metadata=True)
+        start_idx = 0
+    elif start_idx == 0:
         print("Initializing new Cognee database...")
         await cognee.prune.prune_data()
         await cognee.prune.prune_system(metadata=True)
     else:
         print(f"Resuming from checkpoint at row {start_idx}")
-    
-    # Process data in chunks
+
     for i in tqdm(range(start_idx, total_rows, CHUNK_SIZE), desc="Processing data"):
-        chunk = df.iloc[i:i + CHUNK_SIZE]
+        chunk = df.iloc[i : i + CHUNK_SIZE]
         success = await process_chunk(chunk)
         if success:
             save_checkpoint(i + len(chunk) - 1)
         else:
             print(f"Stopped at row {i}")
             break
-    
-    # Finalize with cognify
+
     print("Finalizing embeddings...")
     await cognee.cognify()
     print("Setup complete!")
@@ -90,20 +115,41 @@ async def query_cognee(query: str):
     results = await cognee.search(query_text=query)
     return [r for r in results]
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Cognee setup and querying")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Rebuild embeddings from scratch, ignoring any existing checkpoint.",
+    )
+    parser.add_argument(
+        "--query",
+        type=str,
+        help="Optional query text to run after ensuring the checkpoint is ready.",
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
     async def main():
-        # Run setup
-        await setup_cognee()
-        
-        # Example query
-        while True:
-            query = input("\nEnter your query (or 'quit' to exit): ")
-            if query.lower() in ['quit', 'exit', 'q']:
-                break
-                
-            results = await query_cognee(query)
+        args = parse_args()
+
+        await setup_cognee(force=args.force)
+
+        if args.query:
+            results = await query_cognee(args.query)
             print("\nResults:")
             for i, r in enumerate(results, 1):
                 print(f"{i}. {r}")
-    
+        else:
+            while True:
+                query = input("\nEnter your query (or 'quit' to exit): ")
+                if query.lower() in ["quit", "exit", "q"]:
+                    break
+
+                results = await query_cognee(query)
+                print("\nResults:")
+                for i, r in enumerate(results, 1):
+                    print(f"{i}. {r}")
+
     asyncio.run(main())
