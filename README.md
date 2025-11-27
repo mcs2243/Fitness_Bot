@@ -29,12 +29,30 @@ Target users: busy 20–40-year-olds who train seriously, track diligently, and 
 - Good for: validating the multi-step LangGraph workflow, comparing prompt tweaks, and spotting failures in RAG retrievals.
 
 ### Getting started
-1) Create and activate a virtualenv (not tracked): `python -m venv .venv && .\.venv\Scripts\activate`
+1) Create and activate a virtualenv (not tracked): `python -m venv .venv && source .venv/bin/activate` (Windows: `.\.venv\Scripts\activate`)
 2) Install deps: `pip install -r requirements.txt`
 3) Set environment:
    - `OPENAI_API_KEY=<your key>`
    - Optional tracing: `LANGSMITH_API_KEY=<your key>`
-4) Run the bot (example): `python main.py`
+4) Place workout CSV exports in `./data/` (any Strong/Whoop merge or custom CSV; the CLI also stages files for you).
+5) Run the bot (example): `python main.py --data ./data/your_workouts.csv`
+
+### Cognee CLI (embedding + search)
+`cogneesetup.py` now ships with a small CLI to manage embeddings without redoing work:
+
+- Stage a CSV into the managed filesystem and build embeddings (creates `./data/cognee_checkpoint.json`):
+  - `python cogneesetup.py --data-file path/to/Strong_Whoop_cleaned_small.csv`
+- Rebuild from scratch (ignores checkpoint, prunes Cognee, restages latest file):
+  - `python cogneesetup.py --force --data-dir ./data`
+- List staged datasets you can embed or query:
+  - `python cogneesetup.py --list-data`
+- Run a one-off semantic search after the checkpoint is ready:
+  - `python cogneesetup.py --query "best squat tips this week"`
+
+CLI behaviors:
+- Uploaded CSVs are copied into `--data-dir` (defaults to `./data`) with a timestamped filename so you can drop in fresh exports without overwriting prior ones.
+- The checkpoint in `--data-dir` skips embedding when the dataset is already processed unless you pass `--force`.
+- Use `--chunk-size` to control batch size when embedding (default: 10 rows per chunk).
 
 ### Example interaction (conceptual)
 - Input: unstructured workout notes + set/rep data + sleep score from Whoop.

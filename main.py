@@ -20,6 +20,7 @@ class Config:
     TIMEOUT = 30
     MAX_RETRIES = 2
     PROJECT_NAME = "Fitness_Bot"
+    DATA_DIR = Path("data")
 
 
 def enable_langsmith_if_configured() -> None:
@@ -121,8 +122,8 @@ def reduce_strong_whoop(df: pd.DataFrame) -> List[Dict[str, Any]]:
 
 def load_workout_data(path: Optional[str], limit: Optional[int]) -> List[Dict[str, Any]]:
     """Load workout data from JSON/CSV; use default CSV if present, else sample."""
-    default_csv = Path(r"C:\Users\mcs22\OneDrive\Desktop\Strong_Whoop_cleaned_small.csv")
-    file_path: Optional[Path] = Path(path) if path else (default_csv if default_csv.exists() else None)
+    default_csv = find_latest_csv(Config.DATA_DIR)
+    file_path: Optional[Path] = Path(path) if path else default_csv
 
     if file_path and not file_path.exists():
         raise FileNotFoundError(f"Data file not found: {file_path}")
@@ -148,6 +149,18 @@ def load_workout_data(path: Optional[str], limit: Optional[int]) -> List[Dict[st
     # Fallback: embedded sample
     data = default_sample_workout()
     return data[:limit] if limit else data
+
+
+def find_latest_csv(data_dir: Path) -> Optional[Path]:
+    """Return the most recently modified CSV in the data directory."""
+
+    if not data_dir.exists():
+        return None
+
+    candidates = sorted(
+        data_dir.glob("*.csv"), key=lambda p: p.stat().st_mtime, reverse=True
+    )
+    return candidates[0] if candidates else None
 
 
 def format_workout_records(records: List[Dict[str, Any]]) -> str:
