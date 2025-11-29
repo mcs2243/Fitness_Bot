@@ -39,15 +39,14 @@ Target users: busy 20–40-year-olds who train seriously, track diligently, and 
 - Raw data is **not** in the repo. Provide your own CSVs:
   - Strong export (workout logs) as CSV.
   - Whoop “physiological cycles” export as CSV.
-- Clean/merge via the script:
-  ```
-  python scripts/clean_strong_whoop.py \
-    --strong-path <path_to_strong.csv> \
-    --whoop-path <path_to_whoop.csv> \
-    --output data/Strong_Whoop_cleaned_small.csv \
-    --limit 500
-  ```
+- Clean/merge via the script (prompts if paths are omitted):
+  - Non-interactive: `python scripts/clean_strong_whoop.py --strong-path <path_to_strong.csv> --whoop-path <path_to_whoop.csv> --output data/Strong_Whoop_cleaned_small.csv --limit 500`
+  - Interactive (just run and follow prompts): `python scripts/clean_strong_whoop.py`
 - The cleaned file is ignored by Git (`data/` is in `.gitignore`). Point `main.py` to your cleaned CSV with `--data` or place it at `data/Strong_Whoop_cleaned_small.csv`.
+
+### Running the analyzer
+- With the cleaned CSV: `python main.py --data data/Strong_Whoop_cleaned_small.csv --limit 50 --goal "Your goal"`
+- If `--data` is omitted and no default file exists, the script falls back to a small embedded sample.
 
 ### Example interaction (conceptual)
 - Input: unstructured workout notes + set/rep data + sleep score from Whoop.

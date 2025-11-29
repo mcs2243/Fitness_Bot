@@ -83,13 +83,11 @@ def main():
     parser = argparse.ArgumentParser(description="Clean and merge Strong + Whoop CSV exports.")
     parser.add_argument(
         "--strong-path",
-        required=True,
-        help="Path to the Strong export CSV (from the Strong app).",
+        help="Path to the Strong export CSV (from the Strong app). If omitted, you will be prompted.",
     )
     parser.add_argument(
         "--whoop-path",
-        required=True,
-        help="Path to the Whoop physiological cycles CSV.",
+        help="Path to the Whoop physiological cycles CSV. If omitted, you will be prompted.",
     )
     parser.add_argument(
         "--output",
@@ -104,8 +102,8 @@ def main():
     )
     args = parser.parse_args()
 
-    strong_path = Path(args.strong_path)
-    whoop_path = Path(args.whoop_path)
+    strong_path = Path(args.strong_path) if args.strong_path else Path(input("Enter path to Strong CSV: ").strip('"'))
+    whoop_path = Path(args.whoop_path) if args.whoop_path else Path(input("Enter path to Whoop CSV: ").strip('"'))
     if not strong_path.exists():
         raise FileNotFoundError(f"Strong CSV not found: {strong_path}")
     if not whoop_path.exists():
