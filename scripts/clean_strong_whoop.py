@@ -83,12 +83,12 @@ def main():
     parser = argparse.ArgumentParser(description="Clean and merge Strong + Whoop CSV exports.")
     parser.add_argument(
         "--strong-path",
-        default=r"C:\Users\mcs22\Downloads\strong (7).csv",
-        help="Path to the Strong export CSV.",
+        required=True,
+        help="Path to the Strong export CSV (from the Strong app).",
     )
     parser.add_argument(
         "--whoop-path",
-        default=r"C:\Users\mcs22\Downloads\physiological_cycles.csv",
+        required=True,
         help="Path to the Whoop physiological cycles CSV.",
     )
     parser.add_argument(
