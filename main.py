@@ -119,7 +119,26 @@ def reduce_strong_whoop(df: pd.DataFrame) -> List[Dict[str, Any]]:
     return trimmed.to_dict(orient="records")
 
 
-def load_workout_data(path: Optional[str], limit: Optional[int]) -> List[Dict[str, Any]]:
+def parse_and_filter_dates(df: pd.DataFrame, months: Optional[int]) -> pd.DataFrame:
+    """Parse date columns and filter to recent months if requested."""
+    date_col = None
+    for candidate in ["date", "Date", "Cycle start time"]:
+        if candidate in df.columns:
+            date_col = candidate
+            break
+    if not date_col:
+        return df
+
+    df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+    df = df.dropna(subset=[date_col])
+    df = df.sort_values(date_col)
+    if months:
+        cutoff = pd.Timestamp.now() - pd.DateOffset(months=months)
+        df = df[df[date_col] >= cutoff]
+    return df
+
+
+def load_workout_data(path: Optional[str], limit: Optional[int], months: Optional[int]) -> List[Dict[str, Any]]:
     """Load workout data from JSON/CSV; use default CSV if present, else sample."""
     default_csv = Path(r"C:\Users\mcs22\OneDrive\Desktop\Strong_Whoop_cleaned_small.csv")
     file_path: Optional[Path] = Path(path) if path else (default_csv if default_csv.exists() else None)
@@ -138,12 +157,16 @@ def load_workout_data(path: Optional[str], limit: Optional[int]) -> List[Dict[st
 
     if file_path and file_path.suffix.lower() == ".csv":
         df = pd.read_csv(file_path)
-        if limit:
-            df = df.head(limit)
+        df = parse_and_filter_dates(df, months)
         # If this looks like the merged Strong/Whoop export, reduce fields
         if {"Workout Name", "Exercise Name"}.issubset(set(df.columns)):
-            return reduce_strong_whoop(df)
-        return df.to_dict(orient="records")
+            df_records = reduce_strong_whoop(df)
+        else:
+            df_records = df.to_dict(orient="records")
+
+        if limit:
+            df_records = df_records[-limit:]  # take most recent after sorting
+        return df_records
 
     # Fallback: embedded sample
     data = default_sample_workout()
@@ -219,6 +242,12 @@ def main():
         help="Limit rows used from the dataset to keep prompts small (default: 30).",
     )
     parser.add_argument(
+        "--months",
+        type=int,
+        default=6,
+        help="How many recent months of data to include (default: 6). Set to 0 to disable date filtering.",
+    )
+    parser.add_argument(
         "--goal",
         type=str,
         default="Build strength and keep fatigue in check while improving technique.",
@@ -229,7 +258,8 @@ def main():
     enable_langsmith_if_configured()
     llm = init_llm()
 
-    records = load_workout_data(args.data, args.limit)
+    months = args.months if args.months and args.months > 0 else None
+    records = load_workout_data(args.data, args.limit, months)
     formatted = format_workout_records(records)
 
     print("=== Input Data ===")
