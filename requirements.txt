@@ -7,3 +7,5 @@ langsmith
 openai 
 langchain_core
 cognee
+chromadb
+langchain-community

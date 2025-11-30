@@ -20,9 +20,10 @@ Target users: busy 20–40-year-olds who train seriously, track diligently, and 
 Ultimate end-state: a proactive, multimodal coach that continuously analyzes your training, recovery, nutrition, and conversations to adjust programs and diet in real time. It delivers weekly insight summaries with actionable takeaways, critiques progress photos, adapts plans based on form videos and perceived muscle activation, and surfaces general health tips to keep your lifestyle aligned with your goals.
 
 ### Repo structure
-- `main.py` — entry point CLI for analysis, OpenAI config, optional LangSmith tracing, and data loader.
+- `main.py` — entry point CLI for analysis, OpenAI config, optional LangSmith tracing, data loader, optional Chroma retrieval.
 - `scripts/clean_strong_whoop.py` — CLI to merge Strong app exports and Whoop physiological cycles into a cleaned CSV for analysis.
-- `cogneesetup.py` — Cognee DB initialization and utility helpers (for embedding/querying, not required for the basic CLI).
+- `scripts/ingest_chroma.py` — embed cleaned CSV into a local Chroma store for retrieval-augmented insights.
+- `cogneesetup.py` — Cognee DB initialization and utility helpers (optional, more complex).
 - `requirements.txt` — Python dependencies.
 - `.env` — set `OPENAI_API_KEY`; optional `LANGSMITH_API_KEY` enables tracing.
 
@@ -50,11 +51,15 @@ Ultimate end-state: a proactive, multimodal coach that continuously analyzes you
 - With the cleaned CSV: `python main.py --data data/Strong_Whoop_cleaned_small.csv --limit 50 --months 6 --goal "Your goal"`
 - `--months` filters to recent data (default 6). `--limit` keeps prompts small; both can be adjusted.
 - If `--data` is omitted and no default file exists, the script falls back to a small embedded sample.
+- Optional retrieval (Chroma):
+  - Embed: `python scripts/ingest_chroma.py --data data/Strong_Whoop_cleaned_small.csv --months 6 --limit 500 --persist-dir chroma_store --collection fitness_logs`
+  - Analyze with retrieval: `python main.py --data data/Strong_Whoop_cleaned_small.csv --use-chroma --chroma-dir chroma_store --chroma-collection fitness_logs --top-k 5 --goal "Your goal"`
 
-### Optional: build a Cognee store
+### Optional: build a Cognee store (advanced)
 - Command (prompts for cost estimate and confirmation):  
-  `python cogneesetup.py --data data/Strong_Whoop_cleaned_small.csv --months 6 --limit 500`
-- What it does: filters to recent data (default 6 months), takes the most recent rows (default limit 500), estimates tokens/cost for `text-embedding-3-small`, asks you to confirm, then writes embeddings into the local Cognee store. Use `--yes` to skip the prompt; `--force` to rebuild even if a checkpoint exists.
+  `python cogneesetup.py --data data/Strong_Whoop_cleaned_small.csv --months 6 --limit 500 --yes --query "bench press progression"`
+- If the Cognee DB path is unwritable, set in your shell before running:  
+  `$env:COGNEE_DATA_DIR="C:\Users\mcs22\Fitness_Bot-1\cognee_store"; $env:COGNEE_HOME=$env:COGNEE_DATA_DIR; $env:COGNEE_SYSTEM_DIR=$env:COGNEE_DATA_DIR`
 
 ### Example interaction (conceptual)
 - Input: unstructured workout notes + set/rep data + sleep score from Whoop.

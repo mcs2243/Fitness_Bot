@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from langsmith import Client
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores import Chroma
 
 load_dotenv()
 
@@ -256,6 +258,29 @@ def main():
         default="Build strength and keep fatigue in check while improving technique.",
         help="Short description of the user's current goal.",
     )
+    parser.add_argument(
+        "--use-chroma",
+        action="store_true",
+        help="Augment the prompt with top matches from a local Chroma store.",
+    )
+    parser.add_argument(
+        "--chroma-dir",
+        type=str,
+        default="chroma_store",
+        help="Path to Chroma persistence directory.",
+    )
+    parser.add_argument(
+        "--chroma-collection",
+        type=str,
+        default="fitness_logs",
+        help="Chroma collection name.",
+    )
+    parser.add_argument(
+        "--top-k",
+        type=int,
+        default=5,
+        help="Top K Chroma results to include when --use-chroma is set.",
+    )
     args = parser.parse_args()
 
     enable_langsmith_if_configured()
@@ -265,11 +290,29 @@ def main():
     records = load_workout_data(args.data, args.limit, months)
     formatted = format_workout_records(records)
 
+    retrieval_snippets = ""
+    if args.use_chroma:
+        try:
+            embeddings = OpenAIEmbeddings()
+            vs = Chroma(
+                persist_directory=args.chroma_dir,
+                collection_name=args.chroma_collection,
+                embedding_function=embeddings,
+            )
+            query = f"{args.goal}\nRecent training and recovery"
+            docs = vs.similarity_search(query, k=args.top_k)
+            retrieval_snippets = "\n\nRetrieved prior context:\n" + "\n".join(
+                [f"- {d.page_content}" for d in docs]
+            )
+            print(f"Included {len(docs)} Chroma snippets from {args.chroma_dir}.")
+        except Exception as exc:
+            print(f"Chroma retrieval failed: {exc}. Continuing without retrieval.")
+
     print("=== Input Data ===")
     print(formatted)
     print("\n=== Insight ===")
     try:
-        insight = analyze_workout(llm, formatted, args.goal)
+        insight = analyze_workout(llm, formatted + retrieval_snippets, args.goal)
         print(insight)
     except Exception as exc:
         print(f"Error while analyzing workout data: {exc}")
