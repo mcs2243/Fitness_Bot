@@ -27,6 +27,15 @@ import cognee
 import pandas as pd
 from tqdm import tqdm
 
+# Force Cognee to use a local system root (under cognee_store/.cognee_system)
+SYSTEM_ROOT = DEFAULT_STORE / ".cognee_system"
+SYSTEM_ROOT.mkdir(parents=True, exist_ok=True)
+cognee.config.system_root_directory(str(SYSTEM_ROOT))
+DB_DIR = SYSTEM_ROOT / "databases"
+DB_DIR.mkdir(parents=True, exist_ok=True)
+print(f"Cognee system root: {SYSTEM_ROOT}")
+print(f"Cognee database dir: {DB_DIR}")
+
 # Configuration defaults (can be overridden via CLI)
 CHUNK_SIZE = 10  # Process 10 rows at a time
 DEFAULT_DATA_PATH = Path("data/Strong_Whoop_cleaned_small.csv")
@@ -187,6 +196,11 @@ def parse_args() -> argparse.Namespace:
         type=str,
         help="Optional query text to run after ensuring the checkpoint is ready.",
     )
+    parser.add_argument(
+        "--interactive",
+        action="store_true",
+        help="Enter interactive query mode after setup. If not set, exits unless --query is provided.",
+    )
     return parser.parse_args()
 
 
@@ -225,7 +239,7 @@ if __name__ == "__main__":
             print("\nResults:")
             for i, r in enumerate(results, 1):
                 print(f"{i}. {r}")
-        else:
+        elif args.interactive:
             while True:
                 query = input("\nEnter your query (or 'quit' to exit): ")
                 if query.lower() in ["quit", "exit", "q"]:
@@ -235,5 +249,7 @@ if __name__ == "__main__":
                 print("\nResults:")
                 for i, r in enumerate(results, 1):
                     print(f"{i}. {r}")
+        else:
+            print("Setup complete. No query provided and interactive mode disabled.")
 
     asyncio.run(main())
