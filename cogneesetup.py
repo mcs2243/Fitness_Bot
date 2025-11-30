@@ -13,6 +13,12 @@ from tqdm import tqdm
 # Load environment variables from .env file
 load_dotenv()
 
+# Configure Cognee storage directory (default to local folder)
+DEFAULT_STORE = Path("cognee_store").absolute()
+if not os.environ.get("COGNEE_DATA_DIR"):
+    os.environ["COGNEE_DATA_DIR"] = str(DEFAULT_STORE)
+DEFAULT_STORE.mkdir(parents=True, exist_ok=True)
+
 # Configure embedding model
 os.environ["EMBEDDING_PROVIDER"] = "openai"
 os.environ["EMBEDDING_MODEL"] = "text-embedding-3-small"  # or "text-embedding-3-large" for better quality
