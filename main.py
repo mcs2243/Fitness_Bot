@@ -125,7 +125,7 @@ def parse_and_filter_dates(df: pd.DataFrame, months: Optional[int]) -> pd.DataFr
     for candidate in ["date", "Date", "Cycle start time"]:
         if candidate in df.columns:
             date_col = candidate
-            break
+        break
     if not date_col:
         return df
 
@@ -133,8 +133,11 @@ def parse_and_filter_dates(df: pd.DataFrame, months: Optional[int]) -> pd.DataFr
     df = df.dropna(subset=[date_col])
     df = df.sort_values(date_col)
     if months:
-        cutoff = pd.Timestamp.now() - pd.DateOffset(months=months)
-        df = df[df[date_col] >= cutoff]
+        max_date = df[date_col].max()
+        cutoff = max_date - pd.DateOffset(months=months)
+        filtered = df[df[date_col] >= cutoff]
+        if not filtered.empty:
+            df = filtered
     return df
 
 
