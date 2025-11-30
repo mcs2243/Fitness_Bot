@@ -6,23 +6,26 @@ from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
-import cognee
-import pandas as pd
-from tqdm import tqdm
 
-# Load environment variables from .env file
+# Load environment variables from .env file early
 load_dotenv()
 
-# Configure Cognee storage directory (default to local folder)
+# Configure Cognee storage directory (default to local folder) BEFORE importing cognee
 DEFAULT_STORE = Path("cognee_store").absolute()
 if not os.environ.get("COGNEE_DATA_DIR"):
     os.environ["COGNEE_DATA_DIR"] = str(DEFAULT_STORE)
+if not os.environ.get("COGNEE_HOME"):
+    os.environ["COGNEE_HOME"] = os.environ["COGNEE_DATA_DIR"]
 DEFAULT_STORE.mkdir(parents=True, exist_ok=True)
 
-# Configure embedding model
-os.environ["EMBEDDING_PROVIDER"] = "openai"
-os.environ["EMBEDDING_MODEL"] = "text-embedding-3-small"  # or "text-embedding-3-large" for better quality
+# Configure embedding model BEFORE importing cognee
+os.environ["EMBEDDING_PROVIDER"] = os.environ.get("EMBEDDING_PROVIDER", "openai")
+os.environ["EMBEDDING_MODEL"] = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")
 EMBED_RATE_PER_1K = 0.00002  # text-embedding-3-small cost per 1K tokens
+
+import cognee
+import pandas as pd
+from tqdm import tqdm
 
 # Configuration defaults (can be overridden via CLI)
 CHUNK_SIZE = 10  # Process 10 rows at a time
