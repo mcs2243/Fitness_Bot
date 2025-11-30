@@ -51,6 +51,11 @@ Ultimate end-state: a proactive, multimodal coach that continuously analyzes you
 - `--months` filters to recent data (default 6). `--limit` keeps prompts small; both can be adjusted.
 - If `--data` is omitted and no default file exists, the script falls back to a small embedded sample.
 
+### Optional: build a Cognee store
+- Command (prompts for cost estimate and confirmation):  
+  `python cogneesetup.py --data data/Strong_Whoop_cleaned_small.csv --months 6 --limit 500`
+- What it does: filters to recent data (default 6 months), takes the most recent rows (default limit 500), estimates tokens/cost for `text-embedding-3-small`, asks you to confirm, then writes embeddings into the local Cognee store. Use `--yes` to skip the prompt; `--force` to rebuild even if a checkpoint exists.
+
 ### Example interaction (conceptual)
 - Input: unstructured workout notes + set/rep data + sleep score from Whoop.
 - Output: summarized performance, recovery-adjusted recommendations, and next-session tweaks.
