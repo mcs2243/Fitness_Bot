@@ -65,7 +65,7 @@ def load_checkpoint():
     return {"last_processed": -1, "total_processed": 0}
 
 
-def checkpoint_covers_dataset(checkpoint: dict) -> bool:
+def checkpoint_covers_dataset(checkpoint: dict, total_rows: int) -> bool:
     """Return True if the checkpoint already includes every row in the dataset."""
 
     last_processed = checkpoint.get("last_processed", -1)
@@ -101,12 +101,11 @@ async def setup_cognee(df: pd.DataFrame, force: bool = False):
     to query or inspect them.
     """
 
+    total_rows = len(df)
     checkpoint = load_checkpoint()
     start_idx = checkpoint.get("last_processed", -1) + 1
 
-    total_rows = len(df)
-
-    if checkpoint_covers_dataset(checkpoint) and not force:
+    if checkpoint_covers_dataset(checkpoint, total_rows) and not force:
         print(
             "Checkpoint already covers the dataset. Skipping embedding run. "
             "Use --force to rebuild."
