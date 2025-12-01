@@ -11,6 +11,7 @@ from langchain_openai import ChatOpenAI
 from langsmith import Client
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
+from langsmith import traceable
 
 load_dotenv()
 
@@ -292,7 +293,8 @@ def main():
 
     retrieval_snippets = ""
     if args.use_chroma:
-        try:
+        @traceable(name="chroma_retrieval")
+        def retrieve_chroma() -> str:
             embeddings = OpenAIEmbeddings()
             vs = Chroma(
                 persist_directory=args.chroma_dir,
@@ -301,10 +303,13 @@ def main():
             )
             query = f"{args.goal}\nRecent training and recovery"
             docs = vs.similarity_search(query, k=args.top_k)
-            retrieval_snippets = "\n\nRetrieved prior context:\n" + "\n".join(
-                [f"- {d.page_content}" for d in docs]
-            )
-            print(f"Included {len(docs)} Chroma snippets from {args.chroma_dir}.")
+            header = "Retrieved prior context (Chroma):"
+            body = "\n".join([f"- [{i}] {d.page_content}" for i, d in enumerate(docs, 1)])
+            return f"\n\n{header}\n{body}"
+
+        try:
+            retrieval_snippets = retrieve_chroma()
+            print(f"Included Chroma snippets from {args.chroma_dir} (k={args.top_k}).")
         except Exception as exc:
             print(f"Chroma retrieval failed: {exc}. Continuing without retrieval.")
 
