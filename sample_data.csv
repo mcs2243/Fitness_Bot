@@ -1,0 +1,3 @@
+Date,Workout Name,Exercise Name,Set Order,Weight,Reps,RPE,Notes per Exercise,Overall Notes per Workout,Recovery score %,Resting heart rate (bpm),Heart rate variability (ms),Sleep performance %,Asleep duration (min),Day Strain,Energy burned (cal),Average HR (bpm),Max HR (bpm)
+2024-11-01,Leg Day,Back Squat,1,275,6,8,"Good depth","Felt strong",78,55,45,85,430,14.5,2500,120,160
+2024-11-01,Leg Day,Back Squat,2,275,6,8.5,"Knees caving slightly",,78,55,45,85,430,14.5,2500,120,160

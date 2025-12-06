@@ -1,77 +1,100 @@
-## Fitness Bot (Agentic Fitness Coach)
+# Fitness Bot (Agentic Fitness Coach)
 
 An agentic fitness bot built with LangGraph, LangChain, LangSmith, and Cognee. It ingests unstructured workout notes plus structured workout/sleep data to return actionable coaching insights for serious lifters.
 
-### What it does today
+## What it does today
 - Consolidates workout notes, set/rep/weight logs, and recovery inputs (e.g., Whoop/Apple Watch) to produce GPT-4o-driven analysis.
 - Uses Cognee as a vector/RAG backing store for recalling prior sessions and context.
 - Runs through a LangGraph orchestration with tool-calling to keep stateful conversations about your training.
 - Hooks into LangSmith tracing (project: `Fitness_Bot`) to observe, debug, and improve the agent flows.
 
-### Vision (target state)
+## Vision (target state)
 “Fitness consolidation” (like Monarch/Rocket Money but for bodybuilding). The goal is an all-in-one AI coach that:
 - Unifies data from MyFitnessPal (meals), Whoop/Apple Health (sleep/recovery), daily weight logs, and gym notes.
 - Surfaces research-backed, personalized insights (e.g., “Did yesterday’s sleep impact today’s lifts?”).
 - Automates programming adjustments and accepts in-workout feedback to tweak sessions on the fly.
 - Provides one-click integrations, mobile-first UX, and stretch goals like photo-based physique scans for feedback.
 
-Target users: busy 20–40-year-olds who train seriously, track diligently, and want coaching-quality guidance without $200–$250/mo human coaches.
+**Target users**: busy 20–40-year-olds who train seriously, track diligently, and want coaching-quality guidance without $200–$250/mo human coaches.
 
-Ultimate end-state: a proactive, multimodal coach that continuously analyzes your training, recovery, nutrition, and conversations to adjust programs and diet in real time. It delivers weekly insight summaries with actionable takeaways, critiques progress photos, adapts plans based on form videos and perceived muscle activation, and surfaces general health tips to keep your lifestyle aligned with your goals.
+**Ultimate end-state**: a proactive, multimodal coach that continuously analyzes your training, recovery, nutrition, and conversations to adjust programs and diet in real time. It delivers weekly insight summaries with actionable takeaways, critiques progress photos, adapts plans based on form videos and perceived muscle activation, and surfaces general health tips to keep your lifestyle aligned with your goals.
 
-### Repo structure
-- `main.py` — entry point CLI for analysis, OpenAI config, optional LangSmith tracing, data loader, optional Chroma retrieval.
-- `scripts/clean_strong_whoop.py` — CLI to merge Strong app exports and Whoop physiological cycles into a cleaned CSV for analysis.
-- `scripts/ingest_chroma.py` — embed cleaned CSV into a local Chroma store for retrieval-augmented insights.
-- `cogneesetup.py` — Cognee DB initialization and utility helpers (optional, more complex).
-- `requirements.txt` — Python dependencies.
-- `.env` — set `OPENAI_API_KEY`; optional `LANGSMITH_API_KEY` enables tracing.
+---
 
-### LangSmith usage
-- Tracing is enabled when `LANGSMITH_API_KEY` is set (project: `Fitness_Bot`; endpoint: `https://api.smith.langchain.com`).
-- Use LangSmith to inspect runs, tool calls, latency, token usage, and failures while iterating on prompts and graph logic.
+## Web Application Features
+- **Web Dashboard**: Visualizes workout volume, recovery, and sleep trends.
+- **AI Coach Chat**: Interactive chat interface with RAG-based insights.
+- **Data Ingestion**: Supports Strong App (CSV) and Whoop (CSV) data.
 
-### Getting started
-1) Create/activate venv: `python -m venv .venv && .\.venv\Scripts\activate`
-2) Install deps: `pip install -r requirements.txt`
-3) Set env: `OPENAI_API_KEY=<your key>` (optional `LANGSMITH_API_KEY=<your key>`)
-4) Run analysis (with sample data fallback): `python main.py`
-   - Or point to your cleaned CSV: `python main.py --data data/Strong_Whoop_cleaned_small.csv --limit 50 --months 6 --goal "Build strength with good recovery"`
+## Tech Stack
+- **Frontend**: React, Vite, TailwindCSS, Recharts.
+- **Backend**: Python, FastAPI, LangChain, ChromaDB.
 
-### Data preparation (Strong + Whoop)
-- Raw data is **not** in the repo. Provide your own CSVs:
-  - Strong export (workout logs) as CSV.
-  - Whoop “physiological cycles” export as CSV.
-- Clean/merge via the script (prompts if paths are omitted):
-  - Non-interactive: `python scripts/clean_strong_whoop.py --strong-path <path_to_strong.csv> --whoop-path <path_to_whoop.csv> --output data/Strong_Whoop_cleaned_small.csv --limit 500`
-  - Interactive (just run and follow prompts): `python scripts/clean_strong_whoop.py`
-- The cleaned file is ignored by Git (`data/` is in `.gitignore`). Point `main.py` to your cleaned CSV with `--data` or place it at `data/Strong_Whoop_cleaned_small.csv`.
+## Prerequisites
+- Python 3.10+
+- Node.js 18+
+- OpenAI API Key
 
-### Running the analyzer
-- With the cleaned CSV: `python main.py --data data/Strong_Whoop_cleaned_small.csv --limit 50 --months 6 --goal "Your goal"`
-- `--months` filters to recent data (default 6). `--limit` keeps prompts small; both can be adjusted.
-- If `--data` is omitted and no default file exists, the script falls back to a small embedded sample.
-- Optional retrieval (Chroma):
-  - Embed: `python scripts/ingest_chroma.py --data data/Strong_Whoop_cleaned_small.csv --months 6 --limit 500 --persist-dir chroma_store --collection fitness_logs`
-  - Analyze with retrieval: `python main.py --data data/Strong_Whoop_cleaned_small.csv --use-chroma --chroma-dir chroma_store --chroma-collection fitness_logs --top-k 5 --goal "Your goal"`
+## How to Run
 
-### Optional: build a Cognee store (advanced)
-- Command (prompts for cost estimate and confirmation):  
-  `python cogneesetup.py --data data/Strong_Whoop_cleaned_small.csv --months 6 --limit 500 --yes --query "bench press progression"`
-- If the Cognee DB path is unwritable, set in your shell before running:  
-  `$env:COGNEE_DATA_DIR="C:\Users\mcs22\Fitness_Bot-1\cognee_store"; $env:COGNEE_HOME=$env:COGNEE_DATA_DIR; $env:COGNEE_SYSTEM_DIR=$env:COGNEE_DATA_DIR`
+### 1. Backend Setup
+The backend serves the API and handles the LLM logic.
 
-### Example interaction (conceptual)
-- Input: unstructured workout notes + set/rep data + sleep score from Whoop.
-- Output: summarized performance, recovery-adjusted recommendations, and next-session tweaks.
+1.  Navigate to the project root:
+    ```bash
+    cd "Fitness Bot"
+    ```
+2.  Create and activate a virtual environment:
+    ```bash
+    python -m venv .venv
+    # Windows
+    .\.venv\Scripts\activate
+    # Mac/Linux
+    source .venv/bin/activate
+    ```
+3.  Install dependencies:
+    ```bash
+    pip install -r requirements.txt
+    ```
+4.  Create a `.env` file in the root directory with your API keys:
+    ```env
+    OPENAI_API_KEY=sk-...
+    LANGSMITH_API_KEY=... (optional)
+    ```
+5.  Start the backend server:
+    ```bash
+    python -m uvicorn backend.api:app --reload --port 8000
+    ```
+    The API will be available at `http://localhost:8000`.
 
-### Roadmap
-- Add real connectors for MyFitnessPal, Whoop/Apple Health, and gym log apps (one-click OAuth + background sync).
-- Enrich insights with evidence-based content tied to the user’s data.
-- Mobile-first UI and on-gym feedback loop to adjust programming mid-session.
-- Photo-based physique scans for progress tracking.
-- Subscription model: free sync + baseline trends; premium for adaptive plans and coaching-style feedback.
+### 2. Frontend Setup
+The frontend is a React application.
 
-### Monetization hypothesis
-- Free: data sync + trend dashboards.
-- Premium ($20/mo target): personalized insights, adaptive plans, coaching-style feedback; possible $25 onboarding + 2-month trial.
+1.  Navigate to the frontend directory:
+    ```bash
+    cd frontend
+    ```
+2.  Install dependencies:
+    ```bash
+    npm install
+    ```
+3.  Start the development server:
+    ```bash
+    npm run dev
+    ```
+4.  Open your browser to `http://localhost:5173`.
+
+## Usage
+1.  **Upload Data**: On the Dashboard, drag and drop your Strong App or Whoop CSV files.
+2.  **View Insights**: Check the charts for volume and recovery trends.
+3.  **Chat with Coach**: Switch to the "Coach Chat" tab to ask questions like "How is my squat form?" or "Should I train heavy today?".
+
+## Repo Structure
+- `backend/`: FastAPI application and logic.
+    - `api.py`: API endpoints.
+    - `llm_service.py`: LangChain/OpenAI integration.
+    - `data_loader.py`: Data parsing logic.
+- `frontend/`: React application.
+    - `src/components/`: Dashboard and Chat components.
+- `scripts/`: Original data cleaning and ingestion scripts.
+- `main.py`: Legacy CLI entry point.

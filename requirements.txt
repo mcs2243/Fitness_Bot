@@ -3,9 +3,11 @@ langsmith
 langchain-openai
 pandas
 python-dotenv
-langsmith 
-openai 
+openai
 langchain_core
 cognee
 chromadb
 langchain-community
+fastapi
+uvicorn
+python-multipart
