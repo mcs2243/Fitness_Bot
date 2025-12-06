@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Dashboard from './components/Dashboard';
 import ChatInterface from './components/ChatInterface';
-import { LayoutDashboard, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Dumbbell } from 'lucide-react';
 import axios from 'axios';
 
 // Configure axios base URL
@@ -31,7 +31,6 @@ function App() {
     const formData = new FormData();
     formData.append('file', file);
 
-    // We let the error propagate so Dashboard can catch it and show error state
     await axios.post('/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
@@ -59,48 +58,53 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 flex font-sans">
-      {/* Sidebar */}
-      <aside className="w-20 lg:w-64 bg-gray-900 border-r border-gray-800 flex flex-col items-center lg:items-stretch py-8 transition-all duration-300">
-        <div className="mb-12 px-4 text-center lg:text-left">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent hidden lg:block tracking-tight">
-            FitBot
-          </h1>
-          <span className="text-2xl font-bold text-blue-500 lg:hidden">FB</span>
+    <div className="min-h-screen bg-gray-950 text-gray-100 font-sans flex flex-col">
+      {/* Top Navigation Bar */}
+      <nav className="bg-gray-900/80 backdrop-blur-md border-b border-gray-800 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-2">
+              <div className="bg-blue-600 p-1.5 rounded-lg">
+                <Dumbbell size={20} className="text-white" />
+              </div>
+              <span className="font-bold text-xl tracking-tight text-white">FitBot</span>
+            </div>
+
+            <div className="flex space-x-4">
+              <button
+                onClick={() => setActiveTab('dashboard')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2
+                  ${activeTab === 'dashboard'
+                    ? 'bg-gray-800 text-white shadow-sm ring-1 ring-gray-700'
+                    : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
+                  }`}
+              >
+                <LayoutDashboard size={16} />
+                Dashboard
+              </button>
+              <button
+                onClick={() => setActiveTab('chat')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2
+                  ${activeTab === 'chat'
+                    ? 'bg-gray-800 text-white shadow-sm ring-1 ring-gray-700'
+                    : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
+                  }`}
+              >
+                <MessageSquare size={16} />
+                Coach Chat
+              </button>
+            </div>
+          </div>
         </div>
-
-        <nav className="flex-1 space-y-2 px-2">
-          <button
-            onClick={() => setActiveTab('dashboard')}
-            className={`w-full p-3 rounded-xl flex items-center gap-3 transition-all duration-200 ${activeTab === 'dashboard'
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25 translate-x-1'
-                : 'text-gray-400 hover:bg-gray-800 hover:text-white hover:translate-x-1'
-              }`}
-          >
-            <LayoutDashboard size={24} />
-            <span className="hidden lg:block font-medium">Dashboard</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('chat')}
-            className={`w-full p-3 rounded-xl flex items-center gap-3 transition-all duration-200 ${activeTab === 'chat'
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25 translate-x-1'
-                : 'text-gray-400 hover:bg-gray-800 hover:text-white hover:translate-x-1'
-              }`}
-          >
-            <MessageSquare size={24} />
-            <span className="hidden lg:block font-medium">Coach Chat</span>
-          </button>
-        </nav>
-      </aside>
+      </nav>
 
       {/* Main Content */}
-      <main className="flex-1 h-screen overflow-hidden flex flex-col bg-gray-950">
-        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent">
+      <main className="flex-1 overflow-hidden">
+        <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent">
           {activeTab === 'dashboard' ? (
             <Dashboard data={data} onUpload={handleUpload} />
           ) : (
-            <div className="h-full p-4 lg:p-8 max-w-5xl mx-auto w-full">
+            <div className="h-full max-w-5xl mx-auto p-4 lg:p-8">
               <ChatInterface
                 history={chatHistory}
                 onSendMessage={handleSendMessage}
