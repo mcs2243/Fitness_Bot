@@ -1,13 +1,61 @@
 import React, { useState, useEffect } from 'react';
 import Dashboard from './components/Dashboard';
 import ChatInterface from './components/ChatInterface';
-import { LayoutDashboard, MessageSquare, Dumbbell } from 'lucide-react';
 import axios from 'axios';
+import {
+  TabList,
+  Tab,
+  makeStyles,
+  shorthands,
+  Text,
+  Avatar
+} from '@fluentui/react-components';
+import {
+  Board24Regular,
+  Chat24Regular,
+  Dumbbell24Regular
+} from '@fluentui/react-icons';
 
 // Configure axios base URL
 axios.defaults.baseURL = 'http://localhost:8000';
 
+const useStyles = makeStyles({
+  root: {
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100vh',
+    backgroundColor: '#202020', // Fluent dark background
+    color: '#fff',
+  },
+  nav: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '0 24px',
+    backgroundColor: '#292929',
+    borderBottom: '1px solid #424242',
+    height: '60px',
+  },
+  logo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+  },
+  content: {
+    flex: 1,
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  scrollContainer: {
+    flex: 1,
+    overflowY: 'auto',
+    ...shorthands.padding('24px'),
+  }
+});
+
 function App() {
+  const styles = useStyles();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'chat'>('dashboard');
   const [data, setData] = useState<any[]>([]);
   const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'assistant', content: string }[]>([]);
@@ -58,53 +106,30 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 font-sans flex flex-col">
-      {/* Top Navigation Bar */}
-      <nav className="bg-gray-900/80 backdrop-blur-md border-b border-gray-800 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2">
-              <div className="bg-blue-600 p-1.5 rounded-lg">
-                <Dumbbell size={20} className="text-white" />
-              </div>
-              <span className="font-bold text-xl tracking-tight text-white">FitBot</span>
-            </div>
-
-            <div className="flex space-x-4">
-              <button
-                onClick={() => setActiveTab('dashboard')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2
-                  ${activeTab === 'dashboard'
-                    ? 'bg-gray-800 text-white shadow-sm ring-1 ring-gray-700'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
-                  }`}
-              >
-                <LayoutDashboard size={16} />
-                Dashboard
-              </button>
-              <button
-                onClick={() => setActiveTab('chat')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2
-                  ${activeTab === 'chat'
-                    ? 'bg-gray-800 text-white shadow-sm ring-1 ring-gray-700'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
-                  }`}
-              >
-                <MessageSquare size={16} />
-                Coach Chat
-              </button>
-            </div>
-          </div>
+    <div className={styles.root}>
+      <nav className={styles.nav}>
+        <div className={styles.logo}>
+          <Avatar icon={<Dumbbell24Regular />} color="brand" />
+          <Text weight="semibold" size={400}>FitBot</Text>
         </div>
+
+        <TabList
+          selectedValue={activeTab}
+          onTabSelect={(_, data) => setActiveTab(data.value as 'dashboard' | 'chat')}
+        >
+          <Tab value="dashboard" icon={<Board24Regular />}>Dashboard</Tab>
+          <Tab value="chat" icon={<Chat24Regular />}>Coach Chat</Tab>
+        </TabList>
+
+        <div style={{ width: '40px' }}></div> {/* Spacer for balance */}
       </nav>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-hidden">
-        <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent">
+      <main className={styles.content}>
+        <div className={styles.scrollContainer}>
           {activeTab === 'dashboard' ? (
             <Dashboard data={data} onUpload={handleUpload} />
           ) : (
-            <div className="h-full max-w-5xl mx-auto p-4 lg:p-8">
+            <div style={{ maxWidth: '1000px', margin: '0 auto', height: '100%' }}>
               <ChatInterface
                 history={chatHistory}
                 onSendMessage={handleSendMessage}
